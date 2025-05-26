@@ -1920,108 +1920,68 @@ let currentChallenge = null;
 let team1User = null;
 let team2User = null;
 
-function drawChallenge() {
-  if (challengeLocked) {
-    alert("You must complete or veto the current challenge first.");
+let lobbyId = null;
+let socket = null; // For real-time communication
+
+function joinLobby() {
+  const lobbyIdInput = document.getElementById("lobby-id-input");
+  const enteredLobbyId = lobbyIdInput.value.trim();
+
+  if (!enteredLobbyId) {
+    alert("You must enter a valid lobby ID.");
     return;
   }
 
-  const selectedRegion = document.getElementById("region-select").value;
-  const challenges = regionChallenges[selectedRegion];
-  const card = document.getElementById("challenge-card");
-  const cardText = document.getElementById("card-text");
+  lobbyId = enteredLobbyId; // Set the global lobbyId variable
 
-  if (!challenges || challenges.length === 0) {
-    cardText.innerText = "Please select a valid region.";
-    return;
-  }
+  // Connect to the WebSocket server
+  socket = new WebSocket("wss://your-backend-url"); // Replace with your WebSocket server URL
 
-  const randomIndex = Math.floor(Math.random() * challenges.length);
-  const selected = challenges[randomIndex];
-  currentChallenge = selected;
+  socket.onopen = () => {
+    socket.send(JSON.stringify({ type: "joinLobby", lobbyId }));
+    alert(`Joined lobby: ${lobbyId}`);
 
-  card.classList.add("drawing");
-  setTimeout(() => {
-    cardText.innerHTML = `
-      <h3>${selected.title}</h3>
-      <p>${selected.text}</p>
-      <p>🪙 <strong>Reward:</strong> ${selected.coins} coins<br/>
-         ⛔ <strong>Veto Penalty:</strong> ${selected.vetoPenalty} minutes</p>
-    `;
-    card.classList.remove("drawing");
-    document.getElementById("challenge-card").classList.remove("hidden");
-    document.getElementById("challenge-actions").style.display = "block";
-    team1Confirmed = false;
-    team2Confirmed = false;
-    challengeLocked = true;
-  }, 600);
+    // Hide the lobby home screen and show the game section
+    document.getElementById("lobby-home").classList.add("hidden");
+    document.getElementById("game-section").classList.remove("hidden");
+    document.getElementById("team-selection").classList.remove("hidden");
+    document.getElementById("coin-balance").classList.remove("hidden");
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "teamClaimed") {
+      updateTeamStatus(data.teamNumber, data.userName);
+    }
+  };
+
+  socket.onerror = (error) => {
+    console.error("WebSocket error:", error);
+  };
 }
 
 function claimTeam(teamNumber) {
+  if (!lobbyId || !socket || socket.readyState !== WebSocket.OPEN) {
+    alert("You must join a lobby first.");
+    return;
+  }
+
   const userName = prompt("Enter your name to claim this team:");
   if (!userName) {
     alert("You must enter a name to claim a team.");
     return;
   }
 
+  socket.send(JSON.stringify({ type: "claimTeam", lobbyId, teamNumber, userName }));
+}
+
+function updateTeamStatus(teamNumber, userName) {
+  const teamStatus = document.getElementById("team-status");
   if (teamNumber === 1) {
-    if (team1User) {
-      alert(`Team 1 is already claimed by ${team1User}.`);
-    } else {
-      team1User = userName;
-      document.getElementById("team-status").innerText = `Team 1: ${team1User} | Team 2: ${team2User || "Unclaimed"}`;
-      alert(`You have successfully claimed Team 1, ${userName}!`);
-    }
+    team1User = userName;
+    teamStatus.innerText = `Team 1 claimed by ${userName}`;
   } else if (teamNumber === 2) {
-    if (team2User) {
-      alert(`Team 2 is already claimed by ${team2User}.`);
-    } else {
-      team2User = userName;
-      document.getElementById("team-status").innerText = `Team 1: ${team1User || "Unclaimed"} | Team 2: ${team2User}`;
-      alert(`You have successfully claimed Team 2, ${userName}!`);
-    }
+    team2User = userName;
+    teamStatus.innerText = `Team 2 claimed by ${userName}`;
   }
-}
-
-function teamConfirm(teamNumber) {
-  if (!currentChallenge) return;
-
-  if (teamNumber === 1) {
-    if (!team1User) {
-      alert("Team 1 has not been claimed yet.");
-      return;
-    }
-    team1Confirmed = true;
-    alert(`✅ ${team1User} confirmed the challenge is complete.`);
-  } else if (teamNumber === 2) {
-    if (!team2User) {
-      alert("Team 2 has not been claimed yet.");
-      return;
-    }
-    team2Confirmed = true;
-    alert(`✅ ${team2User} confirmed the challenge is complete.`);
-  }
-
-  if (team1Confirmed && team2Confirmed) {
-    coinBalance += currentChallenge.coins;
-    alert(`🎉 Both teams confirmed!\nYou earned ${currentChallenge.coins} coins!\n💰 Total: ${coinBalance}`);
-    document.getElementById("coin-balance").innerText = `💰 Total Coins: ${coinBalance}`;
-    resetChallengeState();
-  }
-}
-
-function vetoChallenge() {
-  if (!currentChallenge) return;
-
-  alert(`❌ Challenge vetoed. You are stuck here for ${currentChallenge.vetoPenalty} minutes.`);
-  resetChallengeState();
-}
-
-function resetChallengeState() {
-  currentChallenge = null;
-  team1Confirmed = false;
-  team2Confirmed = false;
-  challengeLocked = false;
-  document.getElementById("challenge-actions").style.display = "none";
-  document.getElementById("challenge-card").classList.add("hidden");
 }
