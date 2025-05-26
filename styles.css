@@ -1,0 +1,137 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f9ff;
+    color: #333;
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  h1 {
+    color: #007acc;
+  }
+  
+  .section {
+    margin-top: 3rem;
+  }
+  
+  button {
+    font-size: 1.2rem;
+    padding: 0.8rem 2rem;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #005fa3;
+  }
+  
+  .card {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background-color: white;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .card-container {
+    perspective: 1000px;
+  }
+  
+  .card {
+    margin: 1.5rem auto;
+    padding: 2rem;
+    width: 80%;
+    max-width: 500px;
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    opacity: 1;
+  }
+  
+  .card.drawing {
+    transform: rotateY(180deg) scale(1.05);
+    opacity: 0;
+  }
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f9ff;
+    text-align: center;
+    padding: 2rem;
+    color: #333;
+  }
+  
+  .section {
+    margin-top: 2rem;
+  }
+  
+  select, button {
+    padding: 0.7rem 1.5rem;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    border: none;
+    margin: 1rem 0;
+  }
+  
+  button {
+    background-color: #007acc;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #005fa3;
+  }
+  
+  .card-wrapper {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    perspective: 1000px;
+  }
+  
+  .card {
+    width: 320px;
+    height: 200px;
+    background: linear-gradient(135deg, #ffffff, #f0f0f0);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 3px solid #007acc;
+    transition: transform 0.6s ease, opacity 0.6s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+  
+  .card.drawing {
+    transform: rotateY(180deg) scale(1.05);
+    opacity: 0;
+  }
+  
+  .card-content {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    padding: 1rem;
+    color: #333;
+  }
+  .hidden {
+    display: none;
+  }
+  

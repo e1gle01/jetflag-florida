@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jet Lag Florida</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>🎴 Jet Lag Florida: Challenge Card Draw</h1>
+
+  <div class="section">
+    <label for="region-select"><strong>Select Your Region:</strong></label><br />
+    <select id="region-select">
+      <option value="">-- Choose Region --</option>
+      <option value="I-10 Corridor">I-10 Corridor</option>
+      <option value="I-75 Corridor">I-75 Corridor</option>
+      <option value="I-95 Corridor">I-95 Corridor</option>
+      <option value="US-1 & Keys">US-1 & Keys</option>
+      <option value="US-27 & Central FL">US-27 & Central FL</option>
+      <option value="Turnpike North & Panhandle">Turnpike North & Panhandle</option>
+    </select>
+  </div>
+
+  <div class="section">
+    <button onclick="drawChallenge()">🎯 Draw Challenge</button>
+
+    <div class="card-wrapper">
+      <div id="challenge-card" class="card">
+        <div class="card-content">
+          <p id="card-text">Draw a card to reveal your challenge.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="team-selection" class="section">
+    <h2>Select Your Team</h2>
+    <button onclick="claimTeam(1)">Claim Team 1</button>
+    <button onclick="claimTeam(2)">Claim Team 2</button>
+    <p id="team-status">No teams claimed yet.</p>
+  </div>
+
+  <script src="app.js"></script>
+  
+</body>
+<div id="challenge-actions" class="section" style="display: none;">
+    <button onclick="completeChallenge()">✅ Completed</button>
+    <button onclick="vetoChallenge()">❌ Veto</button>
+  </div>
+  <div id="challenge-card-container" class="card hidden">
+    <div id="card-text"></div>
+    <div id="challenge-actions">
+      <button onclick="teamConfirm(1)">Team 1 Confirm</button>
+      <button onclick="teamConfirm(2)">Team 2 Confirm</button>
+      <button onclick="vetoChallenge()">Veto</button>
+    </div>
+  </div>
+  <div id="coin-balance">💰 Total Coins: 0</div>
+  
+</html>
