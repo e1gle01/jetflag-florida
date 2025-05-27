@@ -42,7 +42,37 @@ wss.on("connection", (ws) => {
         });
       }
     }
-
+    if (data.type === "claimTeam") {
+      const { lobbyId, teamNumber, userName } = data;
+      const lobby = lobbies[lobbyId];
+      if (!lobby) {
+        ws.send(JSON.stringify({ type: "lobbyNotFound" }));
+        return;
+      }
+    
+      if (teamNumber === 1 && !lobby.team1) {
+        lobby.team1 = userName;
+      } else if (teamNumber === 2 && !lobby.team2) {
+        lobby.team2 = userName;
+      } else {
+        ws.send(JSON.stringify({ type: "teamAlreadyClaimed", teamNumber }));
+        return;
+      }
+    
+      // Notify all members of the claim
+      lobby.members.forEach(member => {
+        member.send(JSON.stringify({
+          type: "teamClaimed",
+          teamNumber,
+          userName
+        }));
+      });
+    }
+    if (lobbies[lobbyId]) {}
+      else {
+        ws.send(JSON.stringify({ type: "lobbyNotFound" }));
+      }
+          
     if (data.type === "startGame") {
       const { lobbyId } = data;
       if (lobbies[lobbyId]) {
