@@ -2,7 +2,10 @@ const WebSocket = require("ws");
 const http = require("http");
 
 // Create an HTTP server to work with Heroku
-const server = http.createServer();
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("WebSocket server is running.");
+});
 const wss = new WebSocket.Server({ server });
 
 const lobbies = {};
