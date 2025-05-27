@@ -1927,7 +1927,11 @@ let socket = null; // For real-time communication
 function joinLobby() {
   const lobbyIdInput = document.getElementById("lobby-id-input");
   const enteredLobbyId = lobbyIdInput.value.trim();
-
+  function generateLobbyCode() {
+    const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    document.getElementById("create-lobby-id-input").value = randomCode;
+  }
+  
   if (!enteredLobbyId) {
     alert("You must enter a valid lobby ID.");
     return;
@@ -1944,7 +1948,45 @@ function joinLobby() {
     console.log("WebSocket connection established"); // Debugging log
     socket.send(JSON.stringify({ type: "joinLobby", lobbyId }));
     alert(`Joined lobby: ${lobbyId}`);
-
+    function createLobby() {
+      const customIdInput = document.getElementById("create-lobby-id-input").value.trim();
+      lobbyId = customIdInput || Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+      socket = new WebSocket("wss://jetlagfl-acdf23ec4a95.herokuapp.com/");
+    
+      socket.onopen = () => {
+        console.log("WebSocket connection established for createLobby");
+        socket.send(JSON.stringify({ type: "createLobby", lobbyId }));
+    
+        // UI Updates
+        document.getElementById("lobby-home").classList.add("hidden");
+        document.getElementById("game-section").classList.remove("hidden");
+        document.getElementById("team-selection").classList.remove("hidden");
+        document.getElementById("coin-balance").classList.remove("hidden");
+    
+        const lobbyDetails = document.getElementById("lobby-details");
+        lobbyDetails.classList.remove("hidden");
+        document.getElementById("lobby-id-display").querySelector("span").innerText = lobbyId;
+      };
+    
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("Message received from server:", data);
+        if (data.type === "updateMembers") {
+          updateLobbyMembers(data.memberCount);
+        } else if (data.type === "teamClaimed") {
+          updateTeamStatus(data.teamNumber, data.userName);
+        }
+        function updateTeamStatus(teamNumber, userName) {
+          const statusText = `Team ${teamNumber} claimed by ${userName}`;
+          document.getElementById("team-status").innerText = statusText;
+        }        
+      };
+    
+      socket.onerror = (error) => console.error("WebSocket error:", error);
+      socket.onclose = () => console.log("WebSocket closed");
+    }
+    
     // Hide the lobby home screen and show the game section
     document.getElementById("lobby-home").classList.add("hidden");
     document.getElementById("game-section").classList.remove("hidden");
@@ -1956,25 +1998,6 @@ function joinLobby() {
     lobbyDetails.classList.remove("hidden");
     document.getElementById("lobby-id-display").querySelector("span").innerText = lobbyId;
     localStorage.setItem("lobbyId", lobbyId);
-    function claimTeam(teamNumber) {
-      if (!lobbyId || !socket || socket.readyState !== WebSocket.OPEN) {
-        alert("You must join a lobby first.");
-        return;
-      }
-    
-      const userName = prompt("Enter your name to claim this team:");
-      if (!userName) {
-        alert("You must enter a name to claim a team.");
-        return;
-      }
-    
-      // Store team in localStorage
-      localStorage.setItem("teamNumber", teamNumber);
-      localStorage.setItem("userName", userName);
-    
-      socket.send(JSON.stringify({ type: "claimTeam", lobbyId, teamNumber, userName }));
-    }
-    
   };
 
   socket.onmessage = (event) => {
@@ -1984,6 +2007,9 @@ function joinLobby() {
       updateTeamStatus(data.teamNumber, data.userName);
     } else if (data.type === "updateMembers") {
       updateLobbyMembers(data.memberCount);
+    } else if (data.type === "lobbyNotFound") {
+      alert("❌ That lobby does not exist. Please check the code or create a new one.");
+      socket.close();
     }
     if (data.type === "currentTeamStatus") {
       if (data.team1) updateTeamStatus(1, data.team1);
@@ -2006,7 +2032,7 @@ function updateLobbyMembers(memberCount) {
 }
 
 function claimTeam(teamNumber) {
-  if (!lobbyId || !socket || !socket || socket.readyState !== WebSocket.OPEN) {
+  if (!lobbyId || !socket || socket.readyState !== WebSocket.OPEN) {
     alert("You must join a lobby first.");
     return;
   }
@@ -2017,119 +2043,9 @@ function claimTeam(teamNumber) {
     return;
   }
 
-    socket.send(JSON.stringify({ type: "claimTeam", lobbyId, teamNumber }));
-  }
+  // Store team in localStorage
+  localStorage.setItem("teamNumber", teamNumber);
+  localStorage.setItem("userName", userName);
 
-function generateLobbyCode() {
-  const randomCode = `lobby-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-  document.getElementById("create-lobby-id-input").value = randomCode;
-  console.log(`Generated lobby code: ${randomCode}`); // Debugging log
+  socket.send(JSON.stringify({ type: "claimTeam", lobbyId, teamNumber}));
 }
-
-
-// ...existing code...
-
-function createLobby() {
-  console.log("🚀 createLobby() triggered");
-  console.log("createLobby function called"); // Debug log
-
-  const customLobbyId = document.getElementById("create-lobby-id-input").value.trim();
-  const generatedLobbyId = customLobbyId || `lobby-${Date.now()}`;
-  lobbyId = generatedLobbyId;
-
-  console.log(`Creating lobby with ID: ${lobbyId}`);
-
-  // Open WebSocket connection
-  socket = new WebSocket("wss://jetlagfl-acdf23ec4a95.herokuapp.com/");
-
-  socket.onopen = () => {
-    console.log("WebSocket connection established for createLobby");
-    socket.send(JSON.stringify({ type: "createLobby", lobbyId }));
-
-    // Hide the lobby home screen and show the game section
-    document.getElementById("lobby-home").classList.add("hidden");
-    document.getElementById("game-section").classList.remove("hidden");
-    document.getElementById("team-selection").classList.remove("hidden");
-    document.getElementById("coin-balance").classList.remove("hidden");
-
-    // Show lobby details
-    const lobbyDetails = document.getElementById("lobby-details");
-    lobbyDetails.classList.remove("hidden");
-    document.getElementById("lobby-id-display").querySelector("span").innerText = lobbyId;
-  };
-
-  socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log("Message received from server:", data);
-    if (data.type === "teamClaimed") {
-      updateTeamStatus(data.teamNumber, data.userName);
-    } else if (data.type === "updateMembers") {
-      updateLobbyMembers(data.memberCount);
-      else if (data.type === "lobbyNotFound") {
-        alert("❌ That lobby does not exist. Please check the code or create a new one.");
-        socket.close();
-      }
-      
-    }
-  };
-
-  socket.onerror = (error) => {
-    console.error("WebSocket error in createLobby:", error);
-  };
-
-  socket.onclose = () => {
-    console.log("WebSocket connection closed for createLobby");
-  };
-}
-window.addEventListener("load", () => {
-  const storedLobbyId = localStorage.getItem("lobbyId");
-  const storedTeamNumber = localStorage.getItem("teamNumber");
-  const storedUserName = localStorage.getItem("userName");
-
-  if (storedLobbyId) {
-    // Reconnect to the lobby
-    lobbyId = storedLobbyId;
-    socket = new WebSocket("wss://jetlagfl-acdf23ec4a95.herokuapp.com/");
-
-    socket.onopen = () => {
-      console.log("WebSocket reconnected after refresh");
-      socket.send(JSON.stringify({ type: "joinLobby", lobbyId }));
-
-      document.getElementById("lobby-home").classList.add("hidden");
-      document.getElementById("game-section").classList.remove("hidden");
-      document.getElementById("team-selection").classList.remove("hidden");
-      document.getElementById("coin-balance").classList.remove("hidden");
-
-      const lobbyDetails = document.getElementById("lobby-details");
-      lobbyDetails.classList.remove("hidden");
-      document.getElementById("lobby-id-display").querySelector("span").innerText = lobbyId;
-
-      // Reclaim team if possible
-      if (storedTeamNumber && storedUserName) {
-        socket.send(JSON.stringify({
-          type: "claimTeam",
-          lobbyId,
-          teamNumber: parseInt(storedTeamNumber),
-          userName: storedUserName
-        }));
-      }
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "teamClaimed") {
-        updateTeamStatus(data.teamNumber, data.userName);
-      } else if (data.type === "updateMembers") {
-        updateLobbyMembers(data.memberCount);
-      }
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error after refresh:", error);
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket closed after refresh");
-    };
-  }
-});

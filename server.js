@@ -1,11 +1,8 @@
 const WebSocket = require("ws");
 const http = require("http");
 
-// Create an HTTP server to work with Heroku
-const server = http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end("WebSocket server is running.");
-});
+// Create HTTP server
+const server = http.createServer();
 const wss = new WebSocket.Server({ server });
 
 const lobbies = {};
@@ -14,8 +11,15 @@ wss.on("connection", (ws) => {
   console.log("New client connected");
 
   ws.on("message", (message) => {
-    const data = JSON.parse(message);
-    console.log("Message received:", data); // Debugging log
+    let data;
+    try {
+      data = JSON.parse(message);
+    } catch (err) {
+      console.error("Invalid JSON:", err);
+      return;
+    }
+
+    console.log("Message received:", data);
 
     if (data.type === "createLobby") {
       const { lobbyId } = data;
@@ -26,8 +30,10 @@ wss.on("connection", (ws) => {
       ws.lobbyId = lobbyId;
       lobbies[lobbyId].members.push(ws);
 
-      // Notify the creator about the initial member count
-      ws.send(JSON.stringify({ type: "updateMembers", memberCount: lobbies[lobbyId].members.length }));
+      ws.send(JSON.stringify({
+        type: "updateMembers",
+        memberCount: lobbies[lobbyId].members.length
+      }));
     }
 
     if (data.type === "joinLobby") {
@@ -36,70 +42,54 @@ wss.on("connection", (ws) => {
         ws.lobbyId = lobbyId;
         lobbies[lobbyId].members.push(ws);
 
-        // Notify all members about the updated member count
         lobbies[lobbyId].members.forEach((member) => {
-          member.send(JSON.stringify({ type: "updateMembers", memberCount: lobbies[lobbyId].members.length }));
+          member.send(JSON.stringify({
+            type: "updateMembers",
+            memberCount: lobbies[lobbyId].members.length
+          }));
         });
       }
     }
-    if (data.type === "claimTeam") {
-      const { lobbyId, teamNumber, userName } = data;
-      const lobby = lobbies[lobbyId];
-      if (!lobby) {
-        ws.send(JSON.stringify({ type: "lobbyNotFound" }));
-        return;
-      }
-    
-      if (teamNumber === 1 && !lobby.team1) {
-        lobby.team1 = userName;
-      } else if (teamNumber === 2 && !lobby.team2) {
-        lobby.team2 = userName;
-      } else {
-        ws.send(JSON.stringify({ type: "teamAlreadyClaimed", teamNumber }));
-        return;
-      }
-    
-      // Notify all members of the claim
-      lobby.members.forEach(member => {
-        member.send(JSON.stringify({
-          type: "teamClaimed",
-          teamNumber,
-          userName
-        }));
-      });
-    }
-    if (lobbies[lobbyId]) {}
-      else {
-        ws.send(JSON.stringify({ type: "lobbyNotFound" }));
-      }
-          
+
     if (data.type === "startGame") {
       const { lobbyId } = data;
       if (lobbies[lobbyId]) {
-        console.log(`Game starting for lobby: ${lobbyId}`); // Debugging log
+        console.log(`Game starting for lobby: ${lobbyId}`);
         lobbies[lobbyId].members.forEach((member) => {
           member.send(JSON.stringify({ type: "gameStarted" }));
         });
       } else {
-        console.log(`Lobby not found: ${lobbyId}`); // Debugging log
+        console.log(`Lobby not found: ${lobbyId}`);
       }
     }
   });
 
   ws.on("close", () => {
     console.log("Client disconnected");
-    if (ws.lobbyId && lobbies[ws.lobbyId]) {
-      lobbies[ws.lobbyId].members = lobbies[ws.lobbyId].members.filter((member) => member !== ws);
 
-      // Notify remaining members about the updated member count
-      lobbies[ws.lobbyId].members.forEach((member) => {
-        member.send(JSON.stringify({ type: "updateMembers", memberCount: lobbies[ws.lobbyId].members.length }));
-      });
+    const lobbyId = ws.lobbyId;
+    const lobby = lobbies[lobbyId];
+
+    if (lobby) {
+      lobby.members = lobby.members.filter((member) => member !== ws);
+
+      if (lobby.members.length === 0) {
+        delete lobbies[lobbyId];
+        console.log(`Lobby ${lobbyId} deleted because it became empty.`);
+      } else {
+        lobby.members.forEach((member) => {
+          member.send(JSON.stringify({
+            type: "updateMembers",
+            memberCount: lobby.members.length
+          }));
+        });
+      }
     }
   });
 });
+
+// Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
-
